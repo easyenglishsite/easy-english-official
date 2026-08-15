@@ -179,7 +179,11 @@ async function performSearch() {
     </div>
   `;
 
-try {
+  try {
+    // Run independently (not Promise.all) so a hiccup in one API can't
+    // sink a perfectly good result from the other — e.g. if the Arabic
+    // translation service is briefly down, the English definition should
+    // still render instead of showing a blanket error.
     const defPromise = fetchDefinition(word).catch(() => 'network-error');
     const arabicPromise = fetchArabicTranslation(word);
     const [defResult, arabicText] = await Promise.all([defPromise, arabicPromise]);
@@ -222,7 +226,24 @@ try {
 }
 
 // Fetches the definition entry from the Free Dictionary API.
+// Distinguishes "word not found" (a normal 404 — not an error) from an
+// actual network/CORS failure, so callers can show the right message
+// instead of a generic "something went wrong" for a plain 404.
 async function fetchDefinition(word) {
+  let res;
+  try {
+    res = await fetch(DICT_API + encodeURIComponent(word));
+  } catch (e) {
+    // Network-level failure: offline, CORS block, ad-blocker/privacy
+    // extension (e.g. Brave Shields) intercepting the cross-origin request, etc.
+    throw new Error('network');
+  }
+  if (res.status === 404) return null; // word genuinely not found
+  if (!res.ok) throw new Error('network');
+  const data = await res.json();
+  if (!Array.isArray(data) || data.length === 0) return null;
+  return data[0];
+}
 
 // Fetches an Arabic translation via MyMemory. Falls back gracefully to
 // null (rendered as "translation unavailable") rather than breaking the
