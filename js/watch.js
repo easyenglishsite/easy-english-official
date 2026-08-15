@@ -119,35 +119,48 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------------- Full Screen button ----------------
-// Requests fullscreen on the IFRAME itself, not our wrapping shell.
-// We tried fullscreening our own shell div first so the watermark
-// overlay (a sibling element) would stay visible during fullscreen —
-// but Google Drive's embedded player doesn't reflow its own controls
-// (play/pause, scrubber, settings gear) correctly when ITS parent is
-// resized by an external Fullscreen API call; Drive only lays its UI
-// out correctly when Drive's iframe itself becomes the fullscreen
-// element (which is also what its own built-in ⛶ icon does). So we
-// hand fullscreen to the iframe directly here — this means the
-// watermark won't be visible while fullscreen is active, but the
-// player controls stay correctly positioned, which matters more.
+// Fullscreens our own shell (not the iframe) so the watermark — a
+// sibling <div>, not inside the iframe — stays visible and positioned
+// correctly during fullscreen playback. This is the actual anti-piracy
+// protection, so it has to survive fullscreen.
+//
+// The catch: Google Drive's embedded player only recalculates its own
+// control positions (play/pause, scrubber, settings gear) in response
+// to a real viewport/window resize signal — it doesn't watch its own
+// iframe element's size directly. When we resize the shell (the
+// iframe's PARENT) via the Fullscreen API, the iframe itself does
+// visually stretch to fill it (our CSS gives it width/height: 100%),
+// but Drive's internal player never gets told to relayout, so its
+// buttons stay positioned for the old, smaller size. Dispatching a
+// resize event after the fullscreen transition nudges Drive's player
+// to recompute its layout for the new size, without reloading the
+// iframe (which would restart playback from 0:00 — worse than a
+// one-frame layout hiccup).
 (function setupFullscreenButton() {
   const btn = document.getElementById('fullscreenBtn');
+  const shell = document.getElementById('playerShell');
   const iframe = document.getElementById('videoPlayer');
-  if (!btn || !iframe) return;
+  if (!btn || !shell || !iframe) return;
 
   function isFullscreen() {
-    return document.fullscreenElement === iframe || document.webkitFullscreenElement === iframe;
+    return document.fullscreenElement === shell || document.webkitFullscreenElement === shell;
   }
 
   function updateLabel() {
     btn.textContent = isFullscreen() ? '⤢ Exit Full Screen' : '⛶ Full Screen';
   }
 
+  function nudgeResize() {
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 400);
+  }
+
   btn.addEventListener('click', async () => {
     try {
       if (!isFullscreen()) {
-        if (iframe.requestFullscreen) await iframe.requestFullscreen();
-        else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen(); // Safari/iOS
+        if (shell.requestFullscreen) await shell.requestFullscreen();
+        else if (shell.webkitRequestFullscreen) shell.webkitRequestFullscreen(); // Safari/iOS
       } else {
         if (document.exitFullscreen) await document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
@@ -158,6 +171,6 @@ document.addEventListener('keydown', (e) => {
     }
   });
 
-  document.addEventListener('fullscreenchange', updateLabel);
-  document.addEventListener('webkitfullscreenchange', updateLabel);
+  document.addEventListener('fullscreenchange', () => { updateLabel(); nudgeResize(); });
+  document.addEventListener('webkitfullscreenchange', () => { updateLabel(); nudgeResize(); });
 })();
