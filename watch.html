@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Easy English — Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<script>(function(){try{if(localStorage.getItem('ee-theme')==='dark')document.documentElement.classList.add('dark-mode');}catch(e){}})();</script>
+</head>
+<body oncontextmenu="return false;">
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p class="small-muted">Loading video…</p>
+</div>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <div class="brand">
+      <div class="logo-dot"><img src="images/logo.png" alt="Easy English logo"></div>
+      Easy English
+    </div>
+    <div class="nav-actions-desktop">
+      <div class="nav-links">
+        <a href="dashboard.html" class="nav-link">📚 Dashboard</a>
+        <a href="dictionary.html" class="nav-link">📖 Dictionary</a>
+      </div>
+      <div class="theme-toggle-mount-desktop"></div>
+      <a href="dashboard.html" class="btn btn-outline btn-sm">← Back to Courses</a>
+    </div>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-inner">
+      <div class="nav-links">
+        <a href="dashboard.html" class="nav-link">📚 Dashboard</a>
+        <a href="dictionary.html" class="nav-link">📖 Dictionary</a>
+      </div>
+      <div class="theme-toggle-mount-mobile"></div>
+      <a href="dashboard.html" class="btn btn-outline btn-block">← Back to Courses</a>
+    </div>
+  </div>
+</nav>
+
+<div class="player-wrap">
+  <h2 id="videoTitle" style="color:var(--blue-800); margin-bottom:4px;"></h2>
+  <p class="small-muted" id="videoDesc" style="margin-bottom:18px;"></p>
+
+  <div class="player-shell" id="playerShell">
+    <iframe id="videoPlayer" allow="autoplay; encrypted-media" allowfullscreen frameborder="0"></iframe>
+    <div class="watermark" id="watermark"></div>
+  </div>
+
+  <div id="deniedBox" style="display:none;" class="redeem-box">
+    <h3 style="color:var(--danger);">🔒 This video is locked</h3>
+    <p class="small-muted mt-8">You haven't unlocked this video yet. Go back to your courses and enter a valid code.</p>
+    <a href="dashboard.html" class="btn btn-primary mt-16">Back to Courses</a>
+  </div>
+</div>
+
+<footer class="site-footer">
+  © 2026 Easy English. All rights reserved.
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/watch.js"></script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Easy English — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<script>(function(){try{if(localStorage.getItem('ee-theme')==='dark')document.documentElement.classList.add('dark-mode');}catch(e){}})();</script>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p class="small-muted">Loading admin panel…</p>
+</div>
+
+<div class="admin-shell">
+  <aside class="admin-sidebar">
+    <div class="brand"><div class="logo-dot"><img src="images/logo.png" alt="Easy English logo"></div> Admin</div>
+    <button class="admin-nav-item active" data-panel="overview">📊 Overview</button>
+    <button class="admin-nav-item" data-panel="videos">🎬 Videos</button>
+    <button class="admin-nav-item" data-panel="analytics">📈 Video Analytics</button>
+    <button class="admin-nav-item" data-panel="codes">🔑 Access Codes</button>
+    <button class="admin-nav-item" data-panel="users">👥 Users</button>
+    <div class="admin-theme-row">
+      <span class="ttr-label">Dark mode</span>
+      <div class="theme-toggle-mount-desktop"></div>
+    </div>
+    <div style="flex:1;"></div>
+    <button class="admin-nav-item" id="adminLogoutBtn">🚪 Exit Admin</button>
+  </aside>
+
+  <main class="admin-main">
+
+    <!-- OVERVIEW -->
+    <section class="admin-panel active" id="panel-overview">
+      <div class="panel-header"><h2>Overview</h2></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="statVideos">–</div><div class="label">Total Videos</div></div>
+        <div class="stat-card"><div class="num" id="statUsers">–</div><div class="label">Registered Users</div></div>
+        <div class="stat-card"><div class="num" id="statCodesTotal">–</div><div class="label">Codes Generated</div></div>
+        <div class="stat-card"><div class="num" id="statCodesUsed">–</div><div class="label">Codes Redeemed</div></div>
+      </div>
+      <div class="card-box">
+        <h3 style="color:var(--blue-800); margin-bottom:12px;">Welcome, Admin 👋</h3>
+        <p class="small-muted">Use the sidebar to add new video courses, generate one-time access codes, and view your registered users. Everything you save here appears live on the site for all users, and stays until you delete it.</p>
+      </div>
+    </section>
+
+    <!-- VIDEOS -->
+    <section class="admin-panel" id="panel-videos">
+      <div class="panel-header">
+        <h2>Manage Videos</h2>
+      </div>
+
+      <div class="card-box">
+        <h3 style="color:var(--blue-800); margin-bottom:16px;">Add a New Video Card</h3>
+        <div class="form-row">
+          <div class="field">
+            <label>Video Title</label>
+            <div class="input-wrap">
+              <input type="text" id="newVideoTitle" placeholder="e.g. Lesson 1: Greetings" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Thumbnail Image URL (optional)</label>
+            <div class="input-wrap">
+              <input type="text" id="newVideoThumb" placeholder="https://..." />
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Description (optional)</label>
+          <textarea class="input-like" id="newVideoDesc" placeholder="Short description shown on the card..."></textarea>
+        </div>
+        <div class="field">
+          <label>Google Drive Video Link</label>
+          <div class="input-wrap">
+            <input type="text" id="newVideoUrl" placeholder="https://drive.google.com/file/d/XXXXXXXX/view?usp=sharing" />
+          </div>
+          <p class="small-muted mt-8">Upload the video to Google Drive, set sharing to <strong>"Anyone with the link"</strong> (Viewer role), then paste the share link here. The site automatically converts it into Google Drive's embeddable player.</p>
+        </div>
+        <div class="error-msg" id="videoFormError"></div>
+        <div class="success-msg" id="videoFormSuccess"></div>
+        <button class="btn btn-primary mt-16" id="createVideoBtn">➕ Create Card</button>
+      </div>
+
+      <div class="card-box">
+        <h3 style="color:var(--blue-800); margin-bottom:16px;">Existing Videos</h3>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Title</th><th>Description</th><th>Added</th><th>Unlocks</th><th></th></tr>
+            </thead>
+            <tbody id="videosTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="admin-panel" id="panel-analytics">
+      <div class="panel-header"><h2>Video Analytics</h2></div>
+      <div class="card-box">
+        <p class="small-muted">Purchases (unlocks) per video, and who watched each one.</p>
+      </div>
+      <div id="analyticsList"></div>
+    </section>
+
+    <!-- CODES -->
+    <section class="admin-panel" id="panel-codes">
+      <div class="panel-header">
+        <h2>Access Codes</h2>
+        <button class="btn btn-primary" id="generateCodesBtn">🎲 Generate 30 New Codes</button>
+      </div>
+
+      <div class="card-box">
+        <p class="small-muted">Each code is a random 8-digit number. A code can be redeemed <strong>once, by one user, for one video</strong> — after that it becomes permanently unusable. Give these codes to your students when they contact you (e.g. after payment).</p>
+      </div>
+
+      <div class="card-box">
+        <div class="panel-header" style="margin-bottom:12px;">
+          <h3 style="color:var(--blue-800);">All Codes</h3>
+          <div class="flex gap-8">
+            <button class="btn btn-outline btn-sm" id="copyUnusedBtn">📋 Copy Unused Codes</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Code</th><th>Status</th><th>Used By</th><th>For Video</th><th>Used On</th></tr>
+            </thead>
+            <tbody id="codesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- USERS -->
+    <section class="admin-panel" id="panel-users">
+      <div class="panel-header"><h2>Registered Users</h2></div>
+      <div class="card-box">
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Name</th><th>Email / Phone</th><th>Joined</th><th>Unlocked Videos</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <h3>Delete this video?</h3>
+    <p class="small-muted">This will permanently remove <strong id="deleteVideoName"></strong> from the site. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit user name modal -->
+<div class="modal-overlay" id="editNameModal">
+  <div class="modal-box">
+    <h3>Edit username</h3>
+    <p class="small-muted mt-8">Change the display name shown in the navbar and throughout the site for this user.</p>
+    <input type="text" class="input-like mono" id="editNameInput" style="margin-top:14px;" maxlength="60" placeholder="New name">
+    <div class="error-msg" id="editNameError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeEditNameModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveEditNameBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generated codes result modal -->
+<div class="modal-overlay" id="codesResultModal">
+  <div class="modal-box" style="max-width:520px;">
+    <h3>✅ 30 New Codes Generated</h3>
+    <p class="small-muted mt-8">Copy these and send them to your students. They're also saved permanently in the Codes table.</p>
+    <textarea class="input-like mono" id="codesResultText" style="min-height:200px; margin-top:14px;" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeCodesResultModal()">Close</button>
+      <button class="btn btn-primary" id="copyGeneratedBtn">📋 Copy All</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

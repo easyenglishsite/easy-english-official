@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Easy English — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<script>(function(){try{if(localStorage.getItem('ee-theme')==='dark')document.documentElement.classList.add('dark-mode');}catch(e){}})();</script>
+</head>
+<body>
+
+<div class="theme-toggle-mount-desktop" style="position:fixed; top:18px; right:18px; z-index:60;"></div>
+
+<div class="center-screen">
+
+  <!-- LOGIN CARD -->
+  <div class="auth-card" id="loginCard">
+    <div class="auth-logo">
+      <div class="logo-dot"><img src="images/logo.png" alt="Easy English logo"></div>
+      <h1>Easy English</h1>
+      <p>Learn smarter. Log in to continue.</p>
+    </div>
+
+    <div class="error-msg" id="loginError"></div>
+    <div class="success-msg" id="loginSuccess"></div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label>Email or Phone Number</label>
+        <div class="input-wrap">
+          <input type="text" id="loginIdentifier" placeholder="you@example.com or +1 555 123 4567" required autocomplete="username" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <input type="password" id="loginPassword" placeholder="••••••••" required />
+          <span class="toggle-pass" onclick="togglePass('loginPassword', this)">Show</span>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+        <span id="loginBtnText">Log In</span>
+      </button>
+    </form>
+
+    <div class="divider-row"><span>or</span></div>
+
+    <button class="btn btn-outline btn-block" id="googleLoginBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" width="18" height="18" />
+      Continue with Google
+    </button>
+
+    <div class="form-footer-link">
+      Don't have an account?
+      <button class="link-btn" onclick="showCard('signup')">Create Account</button>
+    </div>
+  </div>
+
+  <!-- SIGNUP CARD -->
+  <div class="auth-card" id="signupCard" style="display:none;">
+    <div class="auth-logo">
+      <div class="logo-dot"><img src="images/logo.png" alt="Easy English logo"></div>
+      <h1>Create Account</h1>
+      <p>Join Easy English in seconds.</p>
+    </div>
+
+    <div class="error-msg" id="signupError"></div>
+
+    <form id="signupForm">
+      <div class="field">
+        <label>Full Name</label>
+        <div class="input-wrap">
+          <input type="text" id="signupName" placeholder="John Doe" required />
+        </div>
+      </div>
+      <div class="field">
+        <label>Email or Phone Number</label>
+        <div class="input-wrap">
+          <input type="text" id="signupIdentifier" placeholder="you@example.com or +1 555 123 4567" required autocomplete="username" />
+        </div>
+        <p class="small-muted mt-8" id="signupIdentifierHint" style="margin-top:6px;"></p>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <div class="input-wrap">
+          <input type="password" id="signupPassword" placeholder="At least 6 characters" required minlength="6" />
+          <span class="toggle-pass" onclick="togglePass('signupPassword', this)">Show</span>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="signupBtn">
+        <span id="signupBtnText">Create Account</span>
+      </button>
+    </form>
+
+    <div class="divider-row"><span>or</span></div>
+
+    <button class="btn btn-outline btn-block" id="googleSignupBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" width="18" height="18" />
+      Sign up with Google
+    </button>
+
+    <div class="form-footer-link">
+      Already have an account?
+      <button class="link-btn" onclick="showCard('login')">Log In</button>
+    </div>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  <span class="copyright" id="copyrightTrigger">© 2026 Easy English. All rights reserved.</span>
+</footer>
+
+<!-- Admin secret modal -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-box">
+    <h3>Admin Access</h3>
+    <div class="error-msg" id="adminError"></div>
+    <div class="field">
+      <label>Admin Username</label>
+      <div class="input-wrap">
+        <input type="text" id="adminUser" placeholder="Username" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Admin Password</label>
+      <div class="input-wrap">
+        <input type="password" id="adminPass" placeholder="Password" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeAdminModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="attemptAdminLogin()">Enter</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

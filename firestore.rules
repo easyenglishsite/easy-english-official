@@ -1,0 +1,83 @@
+rules_version = '2';
+
+// ===========================================================
+// Easy English — Firestore Security Rules
+// -----------------------------------------------------------
+// HOW TO INSTALL:
+// 1. Go to Firebase Console -> Firestore Database -> Rules tab
+// 2. Replace everything with this file's content
+// 3. Click "Publish"
+// ===========================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- users: each person can read/write only their own profile ----
+    // Admin panel reads the full user list through the browser using the
+    // admin username/password gate (app-level), so we allow any signed-in
+    // user to READ the users list (needed for the admin panel to work
+    // without a separate backend), but only the owner can WRITE their own doc.
+    //
+    // EXCEPTION — editing a user's display name from the admin panel:
+    // the admin panel signs into a real, hidden Firebase Auth account
+    // (see README "Admin account setup") whose UID is stored in
+    // admin/config as "adminUid". We allow THAT specific account to
+    // update the "name" field on any user doc, and nothing else, so the
+    // admin can fix a bad/blank display name without opening up general
+    // write access to every signed-in user.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null
+                    && request.auth.uid == get(/databases/$(database)/documents/admin/config).data.adminUid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
+      allow delete: if false;
+    }
+
+    // ---- videos: anyone signed in can read; only writable via console/admin ----
+    // NOTE: Because this project has no separate backend server, the admin
+    // panel writes directly from the browser after a client-side password
+    // check. This means the Firestore rules below allow ANY signed-in user
+    // to technically write to /videos and /codes via direct API calls.
+    // For a small course site this is an acceptable trade-off, but see
+    // README.md "Hardening the Backend" for how to lock this down further
+    // with Firebase Cloud Functions if you want it fully server-enforced.
+    match /videos/{videoId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ---- codes: signed-in users can read (to validate) and update
+    // (to redeem) but never delete. Creation happens from the admin panel.
+    match /codes/{codeId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+                    && resource.data.status == 'unused'
+                    && request.resource.data.status == 'used';
+      allow delete: if false;
+    }
+
+    // ---- unlocks: a user may only create/read their OWN unlock records ----
+    match /unlocks/{unlockId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ---- admin config: NEVER readable/writable from client rules.
+    // The username/password check happens via a read, so we allow read
+    // for signed-out checks (the modal runs before/without user auth on
+    // the login page) but block all writes entirely. Set this document
+    // manually once via the Firebase Console.
+    //
+    // adminUid: the Firebase Auth UID of the hidden admin account used
+    // to sign the admin panel into a real session after the password
+    // check passes (see README "Admin account setup").
+    match /admin/config {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Easy English — My Courses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<script>(function(){try{if(localStorage.getItem('ee-theme')==='dark')document.documentElement.classList.add('dark-mode');}catch(e){}})();</script>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p class="small-muted">Loading your courses…</p>
+</div>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <div class="brand">
+      <div class="logo-dot"><img src="images/logo.png" alt="Easy English logo"></div>
+      Easy English
+    </div>
+    <div class="nav-actions-desktop">
+      <div class="nav-links">
+        <a href="dashboard.html" class="nav-link active">📚 Dashboard</a>
+        <a href="dictionary.html" class="nav-link">📖 Dictionary</a>
+      </div>
+      <span class="user-chip" id="userChip">👋 …</span>
+      <div class="theme-toggle-mount-desktop"></div>
+      <button class="btn btn-outline btn-sm" id="logoutBtn">Log Out</button>
+    </div>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-inner">
+      <div class="nav-links">
+        <a href="dashboard.html" class="nav-link active">📚 Dashboard</a>
+        <a href="dictionary.html" class="nav-link">📖 Dictionary</a>
+      </div>
+      <span class="user-chip" id="userChipMobile">👋 …</span>
+      <div class="theme-toggle-mount-mobile"></div>
+      <button class="btn btn-outline btn-block" id="logoutBtnMobile">Log Out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-hero">
+    <h2>Your Video Courses</h2>
+    <p>Tap a locked video and enter your one-time code to unlock it forever.</p>
+  </div>
+
+  <div class="grid" id="videoGrid">
+    <!-- cards injected by JS -->
+  </div>
+
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="icon">📚</div>
+    <p>No courses have been added yet. Check back soon!</p>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span class="copyright" id="copyrightTrigger">© 2026 Easy English. All rights reserved.</span>
+</footer>
+
+<!-- Redeem code modal -->
+<div class="modal-overlay" id="redeemModal">
+  <div class="modal-box">
+    <h3 id="redeemTitle">Unlock this video</h3>
+    <p class="small-muted">Contact us to get your one-time 8-digit code, then enter it below to unlock this video permanently on your account.</p>
+    <div class="error-msg" id="redeemError"></div>
+    <div class="field mt-16">
+      <label>Access Code</label>
+      <div class="input-wrap">
+        <input type="text" id="redeemCodeInput" maxlength="8" placeholder="12345678" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeRedeemModal()">Cancel</button>
+      <button class="btn btn-primary" id="redeemSubmitBtn" onclick="submitRedeem()">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden admin modal (triple click footer here too) -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-box">
+    <h3>Admin Access</h3>
+    <div class="error-msg" id="adminError"></div>
+    <div class="field">
+      <label>Admin Username</label>
+      <div class="input-wrap"><input type="text" id="adminUser" placeholder="Username" /></div>
+    </div>
+    <div class="field">
+      <label>Admin Password</label>
+      <div class="input-wrap"><input type="password" id="adminPass" placeholder="Password" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeAdminModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="attemptAdminLogin()">Enter</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
