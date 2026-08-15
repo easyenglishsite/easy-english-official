@@ -908,6 +908,25 @@ table.admin-table td {
   display: block;
 }
 
+.player-shell:fullscreen {
+  aspect-ratio: unset;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+}
+.player-shell:-webkit-full-screen {
+  aspect-ratio: unset;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+}
+
+.player-controls {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
 .watermark {
   position: absolute;
   color: rgba(255,255,255,0.55);
@@ -918,24 +937,28 @@ table.admin-table td {
   white-space: nowrap;
   transition: top 4s linear, left 4s linear;
   z-index: 10;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.redeem-box {
-  background: white;
-  border-radius: var(--radius);
-  border: 1px solid var(--blue-100);
-  padding: 28px;
-  margin-top: 24px;
-  box-shadow: var(--shadow-sm);
-  text-align: center;
-}
-.redeem-box input {
-  max-width: 260px;
-  margin: 16px auto;
-  text-align: center;
-  letter-spacing: 3px;
-  font-size: 1.1rem;
-  text-transform: uppercase;
+@media (max-width: 640px) {
+  .player-wrap {
+    padding: 14px 12px 40px;
+  }
+  .player-shell {
+    border-radius: var(--radius-sm);
+  }
+  #videoTitle {
+    font-size: 1.15rem;
+  }
+  .watermark {
+    font-size: 0.75rem;
+    max-width: calc(100% - 16px);
+  }
+  .player-controls .btn {
+    width: 100%;
+  }
 }
 
 /* ---------- Video analytics panel ---------- */
