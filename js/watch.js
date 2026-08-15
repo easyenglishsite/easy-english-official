@@ -112,8 +112,39 @@ function setupWatermark(label) {
 }
 
 // Extra light deterrents (not foolproof, but raises friction)
+// Extra light deterrents (not foolproof, but raises friction)
 document.addEventListener('keydown', (e) => {
   if (e.key === 'PrintScreen') {
     navigator.clipboard.writeText('');
   }
 });
+
+// ---------------- Full Screen button ----------------
+(function setupFullscreenButton() {
+  const btn = document.getElementById('fullscreenBtn');
+  const shell = document.getElementById('playerShell');
+  if (!btn || !shell) return;
+
+  function isFullscreen() {
+    return document.fullscreenElement === shell || document.webkitFullscreenElement === shell;
+  }
+
+  function updateLabel() {
+    btn.textContent = isFullscreen() ? '⤢ Exit Full Screen' : '⛶ Full Screen';
+  }
+
+  btn.addEventListener('click', async () => {
+    try {
+      if (!isFullscreen()) {
+        if (shell.requestFullscreen) await shell.requestFullscreen();
+        else if (shell.webkitRequestFullscreen) shell.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
+    } catch (e) { /* fail quietly */ }
+  });
+
+  document.addEventListener('fullscreenchange', updateLabel);
+  document.addEventListener('webkitfullscreenchange', updateLabel);
+})();
