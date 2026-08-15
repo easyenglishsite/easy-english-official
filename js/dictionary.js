@@ -213,12 +213,6 @@ async function performSearch() {
 
 // Fetches the definition entry from the Free Dictionary API.
 async function fetchDefinition(word) {
-  const res = await fetch(DICT_API + encodeURIComponent(word));
-  if (!res.ok) return null; // 404 = word not found
-  const data = await res.json();
-  if (!Array.isArray(data) || data.length === 0) return null;
-  return data[0];
-}
 
 // Fetches an Arabic translation via MyMemory. Falls back gracefully to
 // null (rendered as "translation unavailable") rather than breaking the
