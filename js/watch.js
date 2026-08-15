@@ -112,7 +112,6 @@ function setupWatermark(label) {
 }
 
 // Extra light deterrents (not foolproof, but raises friction)
-// Extra light deterrents (not foolproof, but raises friction)
 document.addEventListener('keydown', (e) => {
   if (e.key === 'PrintScreen') {
     navigator.clipboard.writeText('');
@@ -120,13 +119,24 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------------- Full Screen button ----------------
+// Requests fullscreen on the IFRAME itself, not our wrapping shell.
+// We tried fullscreening our own shell div first so the watermark
+// overlay (a sibling element) would stay visible during fullscreen —
+// but Google Drive's embedded player doesn't reflow its own controls
+// (play/pause, scrubber, settings gear) correctly when ITS parent is
+// resized by an external Fullscreen API call; Drive only lays its UI
+// out correctly when Drive's iframe itself becomes the fullscreen
+// element (which is also what its own built-in ⛶ icon does). So we
+// hand fullscreen to the iframe directly here — this means the
+// watermark won't be visible while fullscreen is active, but the
+// player controls stay correctly positioned, which matters more.
 (function setupFullscreenButton() {
   const btn = document.getElementById('fullscreenBtn');
-  const shell = document.getElementById('playerShell');
-  if (!btn || !shell) return;
+  const iframe = document.getElementById('videoPlayer');
+  if (!btn || !iframe) return;
 
   function isFullscreen() {
-    return document.fullscreenElement === shell || document.webkitFullscreenElement === shell;
+    return document.fullscreenElement === iframe || document.webkitFullscreenElement === iframe;
   }
 
   function updateLabel() {
@@ -136,13 +146,16 @@ document.addEventListener('keydown', (e) => {
   btn.addEventListener('click', async () => {
     try {
       if (!isFullscreen()) {
-        if (shell.requestFullscreen) await shell.requestFullscreen();
-        else if (shell.webkitRequestFullscreen) shell.webkitRequestFullscreen();
+        if (iframe.requestFullscreen) await iframe.requestFullscreen();
+        else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen(); // Safari/iOS
       } else {
         if (document.exitFullscreen) await document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
       }
-    } catch (e) { /* fail quietly */ }
+    } catch (e) {
+      // Fullscreen can be denied by the browser (e.g. not a direct user
+      // gesture, or unsupported) — fail quietly rather than breaking playback.
+    }
   });
 
   document.addEventListener('fullscreenchange', updateLabel);
