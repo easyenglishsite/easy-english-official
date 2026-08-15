@@ -45,6 +45,7 @@ auth.onAuthStateChanged(async (user) => {
 
   document.getElementById('loadingOverlay').classList.add('hidden');
   renderRecent();
+  getVoicesWhenReady(); // pre-warm speech synthesis voices so the first pronunciation click isn't slow
 });
 
 async function doLogout() {
@@ -180,10 +181,6 @@ async function performSearch() {
   `;
 
   try {
-    // Run independently (not Promise.all) so a hiccup in one API can't
-    // sink a perfectly good result from the other — e.g. if the Arabic
-    // translation service is briefly down, the English definition should
-    // still render instead of showing a blanket error.
     const defPromise = fetchDefinition(word).catch(() => 'network-error');
     const arabicPromise = fetchArabicTranslation(word);
     const [defResult, arabicText] = await Promise.all([defPromise, arabicPromise]);
@@ -225,29 +222,20 @@ async function performSearch() {
   }
 }
 
-// Fetches the definition entry from the Free Dictionary API.
-// Distinguishes "word not found" (a normal 404 — not an error) from an
-// actual network/CORS failure, so callers can show the right message
-// instead of a generic "something went wrong" for a plain 404.
 async function fetchDefinition(word) {
   let res;
   try {
     res = await fetch(DICT_API + encodeURIComponent(word));
   } catch (e) {
-    // Network-level failure: offline, CORS block, ad-blocker/privacy
-    // extension (e.g. Brave Shields) intercepting the cross-origin request, etc.
     throw new Error('network');
   }
-  if (res.status === 404) return null; // word genuinely not found
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error('network');
   const data = await res.json();
   if (!Array.isArray(data) || data.length === 0) return null;
   return data[0];
 }
 
-// Fetches an Arabic translation via MyMemory. Falls back gracefully to
-// null (rendered as "translation unavailable") rather than breaking the
-// whole lookup if the translation service is briefly unavailable.
 async function fetchArabicTranslation(word) {
   try {
     const params = new URLSearchParams({ q: word, langpair: 'en|ar' });
@@ -261,11 +249,6 @@ async function fetchArabicTranslation(word) {
   }
 }
 
-// Picks the best British and American audio/phonetic text out of the
-// "phonetics" array. The Free Dictionary API doesn't always label which
-// entry is UK vs US, so we match on the audio filename convention
-// ("_gb_" / "_us_") that the underlying Google dictionary audio uses,
-// falling back to "first available" / "second available" if unlabeled.
 function pickPronunciations(entry) {
   const phonetics = (entry.phonetics || []).filter(p => p.text || p.audio);
   let uk = phonetics.find(p => p.audio && p.audio.includes('_gb_'));
@@ -281,23 +264,76 @@ function pickPronunciations(entry) {
   };
 }
 
+// ---------------- Text-to-speech voice loading ----------------
+// Chromium-based mobile browsers (Chrome, Brave, Samsung Internet) load
+// speechSynthesis voices asynchronously and often return an EMPTY list on
+// the very first call — speaking immediately after page load silently
+// fails or produces no sound. This waits for the real voice list (via the
+// "voiceschanged" event), with a timeout so we still attempt speech even
+// if that event never fires on a given device/browser.
+let voicesReadyPromise = null;
+function getVoicesWhenReady() {
+  if (!('speechSynthesis' in window)) return Promise.resolve([]);
+  if (voicesReadyPromise) return voicesReadyPromise;
+
+  voicesReadyPromise = new Promise((resolve) => {
+    const existing = window.speechSynthesis.getVoices();
+    if (existing.length > 0) {
+      resolve(existing);
+      return;
+    }
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      resolve(window.speechSynthesis.getVoices());
+    };
+    window.speechSynthesis.onvoiceschanged = finish;
+    setTimeout(finish, 1500); // safety net if the event never fires
+  });
+  return voicesReadyPromise;
+}
+
+// Picks the closest matching installed voice for a requested language
+// (e.g. "en-GB"), falling back to any English voice, then to nothing
+// (letting the browser use its own default) if no English voice exists.
+function pickVoice(voices, lang) {
+  if (!voices || voices.length === 0) return null;
+  const exact = voices.find(v => v.lang && v.lang.toLowerCase() === lang.toLowerCase());
+  if (exact) return exact;
+  const base = lang.split('-')[0].toLowerCase();
+  const sameBase = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(base));
+  if (sameBase) return sameBase;
+  const anyEnglish = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+  return anyEnglish || null;
+}
+
 function playAudio(url, btn, fallbackWord, fallbackLang) {
-  // Falls back to the browser's own built-in text-to-speech (Web Speech
-  // API) whenever the recorded audio file is missing or fails to load —
-  // Google's dictionary audio links (gstatic.com) go stale/404 for many
-  // words, so relying on them alone leaves pronunciation broken often.
-  // speechSynthesis works fully offline-of-network, in every modern
-  // browser, with no CORS/hotlinking issues at all.
-  function speakFallback() {
-    if (!fallbackWord || !('speechSynthesis' in window)) return;
+  async function speakFallback() {
+    if (!fallbackWord || !('speechSynthesis' in window)) {
+      if (btn) { btn.disabled = false; btn.textContent = '▶'; }
+      return;
+    }
     try {
+      const lang = fallbackLang || 'en-US';
+      const voices = await getVoicesWhenReady();
+      const voice = pickVoice(voices, lang);
+
       const utter = new SpeechSynthesisUtterance(fallbackWord);
-      utter.lang = fallbackLang || 'en-US';
-      if (btn) {
-        utter.onend = () => { btn.disabled = false; btn.textContent = '▶'; };
-        utter.onerror = () => { btn.disabled = false; btn.textContent = '▶'; };
-      }
-      window.speechSynthesis.cancel(); // stop any overlapping previous utterance
+      utter.lang = lang;
+      if (voice) utter.voice = voice;
+
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        if (btn) { btn.disabled = false; btn.textContent = '▶'; }
+      };
+      utter.onend = finish;
+      utter.onerror = finish;
+      setTimeout(finish, 4000);
+
+      window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utter);
     } catch (e) {
       if (btn) { btn.disabled = false; btn.textContent = '▶'; }
