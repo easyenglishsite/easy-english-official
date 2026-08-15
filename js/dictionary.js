@@ -281,35 +281,67 @@ function pickPronunciations(entry) {
   };
 }
 
-function playAudio(url, btn) {
-  if (!url) return;
+function playAudio(url, btn, fallbackWord, fallbackLang) {
+  // Falls back to the browser's own built-in text-to-speech (Web Speech
+  // API) whenever the recorded audio file is missing or fails to load —
+  // Google's dictionary audio links (gstatic.com) go stale/404 for many
+  // words, so relying on them alone leaves pronunciation broken often.
+  // speechSynthesis works fully offline-of-network, in every modern
+  // browser, with no CORS/hotlinking issues at all.
+  function speakFallback() {
+    if (!fallbackWord || !('speechSynthesis' in window)) return;
+    try {
+      const utter = new SpeechSynthesisUtterance(fallbackWord);
+      utter.lang = fallbackLang || 'en-US';
+      if (btn) {
+        utter.onend = () => { btn.disabled = false; btn.textContent = '▶'; };
+        utter.onerror = () => { btn.disabled = false; btn.textContent = '▶'; };
+      }
+      window.speechSynthesis.cancel(); // stop any overlapping previous utterance
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = '▶'; }
+    }
+  }
+
+  if (!url) {
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    speakFallback();
+    return;
+  }
+
   const src = url.startsWith('//') ? 'https:' + url : url;
   const audio = new Audio(src);
   if (btn) {
     btn.disabled = true;
-    audio.addEventListener('ended', () => { btn.disabled = false; });
-    audio.addEventListener('error', () => { btn.disabled = false; });
+    btn.textContent = '⏳';
+    audio.addEventListener('ended', () => { btn.disabled = false; btn.textContent = '▶'; });
   }
-  audio.play().catch(() => { if (btn) btn.disabled = false; });
+  audio.addEventListener('error', speakFallback);
+  audio.play().catch(speakFallback);
 }
 
 function renderResult(entry, arabicText, searchedWord) {
   const content = document.getElementById('dictContent');
   const { uk, us } = pickPronunciations(entry);
+  const wordForSpeech = entry.word || searchedWord;
 
   const pronRow = `
     <div class="dict-pron-row">
       ${uk ? `
         <span class="dict-pron-chip">
           <span class="flag">🇬🇧</span> British ${uk.text ? escapeHtml(uk.text) : ''}
-          ${uk.audio ? `<button type="button" data-audio="${escapeHtml(uk.audio)}" aria-label="Play British pronunciation">▶</button>` : ''}
+          <button type="button" data-audio="${uk.audio ? escapeHtml(uk.audio) : ''}" data-lang="en-GB" aria-label="Play British pronunciation">▶</button>
         </span>` : ''}
       ${us ? `
         <span class="dict-pron-chip">
           <span class="flag">🇺🇸</span> American ${us.text ? escapeHtml(us.text) : ''}
-          ${us.audio ? `<button type="button" data-audio="${escapeHtml(us.audio)}" aria-label="Play American pronunciation">▶</button>` : ''}
+          <button type="button" data-audio="${us.audio ? escapeHtml(us.audio) : ''}" data-lang="en-US" aria-label="Play American pronunciation">▶</button>
         </span>` : ''}
-      ${!uk && !us ? `<span class="small-muted">No audio pronunciation available for this word.</span>` : ''}
+      ${!uk && !us ? `
+        <span class="dict-pron-chip">
+          <button type="button" data-audio="" data-lang="en-US" aria-label="Play pronunciation">▶ Listen</button>
+        </span>` : ''}
     </div>
   `;
 
@@ -340,6 +372,8 @@ function renderResult(entry, arabicText, searchedWord) {
   `;
 
   content.querySelectorAll('[data-audio]').forEach(btn => {
-    btn.addEventListener('click', () => playAudio(btn.getAttribute('data-audio'), btn));
+    btn.addEventListener('click', () => {
+      playAudio(btn.getAttribute('data-audio'), btn, wordForSpeech, btn.getAttribute('data-lang'));
+    });
   });
 }
