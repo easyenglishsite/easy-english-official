@@ -179,11 +179,21 @@ async function performSearch() {
     </div>
   `;
 
-  try {
-    const [defResult, arabicText] = await Promise.all([
-      fetchDefinition(word),
-      fetchArabicTranslation(word)
-    ]);
+try {
+    const defPromise = fetchDefinition(word).catch(() => 'network-error');
+    const arabicPromise = fetchArabicTranslation(word);
+    const [defResult, arabicText] = await Promise.all([defPromise, arabicPromise]);
+
+    if (defResult === 'network-error') {
+      content.innerHTML = `
+        <div class="dict-error">
+          <div class="icon">⚠️</div>
+          <p>Couldn't reach the dictionary service.</p>
+          <p class="small-muted mt-8">If you're using an ad-blocker or a browser privacy shield (e.g. Brave Shields), try turning it off for this site — it can block the lookup. Otherwise, check your connection and try again.</p>
+        </div>
+      `;
+      return;
+    }
 
     if (!defResult) {
       content.innerHTML = `
