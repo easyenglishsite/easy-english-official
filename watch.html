@@ -50,9 +50,13 @@
   <h2 id="videoTitle" style="color:var(--blue-800); margin-bottom:4px;"></h2>
   <p class="small-muted" id="videoDesc" style="margin-bottom:18px;"></p>
 
-  <div class="player-shell" id="playerShell">
+<div class="player-shell" id="playerShell">
     <iframe id="videoPlayer" allow="autoplay; encrypted-media" allowfullscreen frameborder="0"></iframe>
     <div class="watermark" id="watermark"></div>
+  </div>
+
+  <div class="player-controls">
+    <button class="btn btn-outline" id="fullscreenBtn" type="button">⛶ Full Screen</button>
   </div>
 
   <div id="deniedBox" style="display:none;" class="redeem-box">
