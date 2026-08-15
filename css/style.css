@@ -908,17 +908,22 @@ table.admin-table td {
   display: block;
 }
 
-.player-shell:fullscreen {
-  aspect-ratio: unset;
-  width: 100vw;
-  height: 100vh;
-  border-radius: 0;
-}
+.player-shell:fullscreen,
 .player-shell:-webkit-full-screen {
   aspect-ratio: unset;
   width: 100vw;
   height: 100vh;
   border-radius: 0;
+  background: black;
+}
+.player-shell:fullscreen iframe,
+.player-shell:fullscreen video,
+.player-shell:-webkit-full-screen iframe,
+.player-shell:-webkit-full-screen video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .player-controls {
@@ -926,7 +931,6 @@ table.admin-table td {
   justify-content: center;
   margin-top: 14px;
 }
-
 .watermark {
   position: absolute;
   color: rgba(255,255,255,0.55);
