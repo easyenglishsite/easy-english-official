@@ -10,6 +10,29 @@ auth.onAuthStateChanged((user) => {
   sessionStorage.removeItem('justLoggedOut');
 });
 
+// ---------------- Device/session tracking (for admin "logged-in devices" count) ----------------
+// Each browser/device gets a random id stored in localStorage so repeat logins
+// from the SAME device update one record instead of inflating the count.
+function getDeviceId() {
+  let id = localStorage.getItem('eeDeviceId');
+  if (!id) {
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('eeDeviceId', id);
+  }
+  return id;
+}
+async function recordDeviceSession(uid) {
+  try {
+    const deviceId = getDeviceId();
+    await db.collection('sessions').doc(`${uid}_${deviceId}`).set({
+      uid: uid,
+      deviceId: deviceId,
+      userAgent: navigator.userAgent,
+      lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  } catch (e) { /* never block login on this */ }
+}
+
 function showCard(which) {
   document.getElementById('loginCard').style.display = which === 'login' ? 'block' : 'none';
   document.getElementById('signupCard').style.display = which === 'signup' ? 'block' : 'none';
@@ -112,7 +135,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
   setLoading('loginBtnText', 'loginBtn', true, 'Log In');
   try {
-    await auth.signInWithEmailAndPassword(parsed.authEmail, password);
+    const cred = await auth.signInWithEmailAndPassword(parsed.authEmail, password);
+    await recordDeviceSession(cred.user.uid);
     window.location.href = 'dashboard.html';
   } catch (err) {
     showMsg('loginError', friendlyError(err));
@@ -148,6 +172,7 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
       authEmail: parsed.authEmail,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    await recordDeviceSession(cred.user.uid);
     window.location.href = 'dashboard.html';
   } catch (err) {
     showMsg('signupError', friendlyError(err));
@@ -190,6 +215,7 @@ async function handleGoogleSignIn() {
       });
     }
 
+    await recordDeviceSession(user.uid);
     window.location.href = 'dashboard.html';
   } catch (err) {
     if (err.code === 'auth/popup-closed-by-user') return; // user just cancelled, no error needed
