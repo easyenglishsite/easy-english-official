@@ -170,10 +170,11 @@ async function submitRedeem() {
       });
     });
 
+    const unlockedVideoId = selectedVideoId;
     closeRedeemModal();
     await loadUnlocks();
     await loadVideos();
-    window.location.href = `watch.html?video=${selectedVideoId}`;
+    window.location.href = `watch.html?video=${unlockedVideoId}`;
 
   } catch (err) {
     errEl.textContent = err.message || 'Something went wrong. Please try again.';
