@@ -12,6 +12,7 @@ if (sessionStorage.getItem('adminAuthed') !== 'true') {
 let allVideos = [];
 let allUnlocks = [];
 let allUsers = [];
+let allSessions = [];
 let allCodes = [];
 
 // ---------------- Sidebar navigation ----------------
@@ -32,7 +33,7 @@ document.getElementById('adminLogoutBtn').addEventListener('click', () => {
 // ---------------- Init: load everything ----------------
 (async function init() {
   try {
-    await Promise.all([loadVideos(), loadCodes(), loadUsers(), loadUnlocks()]);
+    await Promise.all([loadVideos(), loadCodes(), loadUsers(), loadUnlocks(), loadSessions()]);
     renderOverview();
     renderVideosTable();
     renderCodesTable();
@@ -82,6 +83,10 @@ async function loadUsers() {
 async function loadUnlocks() {
   const snap = await db.collection('unlocks').get();
   allUnlocks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+async function loadSessions() {
+  const snap = await db.collection('sessions').get();
+  allSessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 function escapeHtml(str) {
@@ -333,7 +338,7 @@ function renderAnalytics() {
 function renderUsersTable() {
   const tbody = document.getElementById('usersTableBody');
   if (allUsers.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="small-muted" style="text-align:center; padding:20px;">No registered users yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="small-muted" style="text-align:center; padding:20px;">No registered users yet.</td></tr>`;
     return;
   }
   tbody.innerHTML = allUsers.map(u => {
@@ -344,12 +349,17 @@ function renderUsersTable() {
     });
     const contact = u.identifier || u.email || u.phone || '—';
     const contactLabel = u.identifierType === 'phone' ? `📱 ${escapeHtml(contact)}` : escapeHtml(contact);
+    const deviceCount = allSessions.filter(s => s.uid === u.id).length;
+    const deviceLabel = deviceCount === 0
+      ? '<span class="small-muted">—</span>'
+      : `<span class="badge ${deviceCount > 1 ? 'badge-orange' : 'badge-gray'}">📱 ${deviceCount} device${deviceCount === 1 ? '' : 's'}</span>`;
     return `
       <tr>
         <td><strong>${escapeHtml(u.name || 'Unnamed')}</strong></td>
         <td class="small-muted">${contactLabel}</td>
         <td class="small-muted">${fmtDate(u.createdAt)}</td>
         <td class="small-muted">${titles.length ? titles.map(t => `<span class="badge badge-blue" style="margin:2px;">${escapeHtml(t)}</span>`).join('') : '—'}</td>
+        <td>${deviceLabel}</td>
         <td><button class="btn btn-outline btn-sm" onclick="openEditNameModal('${u.id}', '${escapeHtml(u.name || '').replace(/'/g, "\\'")}')">✏️ Edit name</button></td>
       </tr>
     `;
