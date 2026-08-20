@@ -163,7 +163,8 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
   try {
     const cred = await auth.createUserWithEmailAndPassword(parsed.authEmail, password);
     await cred.user.updateProfile({ displayName: name });
-    await db.collection('users').doc(cred.user.uid).set({
+
+    const profileData = {
       name: name,
       email: parsed.type === 'email' ? parsed.display : '',
       phone: parsed.type === 'phone' ? parsed.display : '',
@@ -171,7 +172,20 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
       identifierType: parsed.type,
       authEmail: parsed.authEmail,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+
+    try {
+      await db.collection('users').doc(cred.user.uid).set(profileData);
+    } catch (profileErr) {
+      // The Auth account now exists even though this write failed (e.g. a
+      // rules/permission issue) — don't leave the person stuck on an error
+      // screen with an orphaned account. Retry once; if it still fails,
+      // dashboard.js's self-healing check will create the profile the next
+      // time they successfully load the dashboard.
+      console.error('Profile write failed on signup, will retry on next login:', profileErr);
+      try { await db.collection('users').doc(cred.user.uid).set(profileData); } catch (e2) { /* leave to self-heal */ }
+    }
+
     await recordDeviceSession(cred.user.uid);
     window.location.href = 'dashboard.html';
   } catch (err) {
