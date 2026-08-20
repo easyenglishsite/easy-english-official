@@ -1141,3 +1141,11 @@ html.dark-mode .dict-recent button:hover { background: var(--input-bg); }
 .text-center { text-align: center; }
 .small-muted { font-size: 0.82rem; color: var(--gray-500); }
 .w-full { width: 100%; }
+
+
+
+
+.badge-green { background: #f0fdf4; color: #15803d; }
+.badge-gray { background: var(--gray-100); color: var(--gray-500); }
+.badge-blue { background: var(--blue-100); color: var(--blue-700); }
+.badge-orange { background: #fff7ed; color: #c2410c; }
