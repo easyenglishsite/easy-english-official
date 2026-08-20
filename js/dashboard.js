@@ -21,6 +21,27 @@ auth.onAuthStateChanged(async (user) => {
     const profileDoc = await db.collection('users').doc(user.uid).get();
     if (profileDoc.exists && profileDoc.data().name) {
       displayName = profileDoc.data().name;
+    } else if (!profileDoc.exists) {
+      // SELF-HEALING: this account exists in Firebase Auth but never got a
+      // matching Firestore profile doc (e.g. the write failed silently at
+      // signup time due to a rules issue). Recreate a best-effort profile
+      // now from whatever Auth data is available, so the account shows up
+      // correctly in the admin panel and future lookups don't fail.
+      const isPhoneAccount = (user.email || '').endsWith('@phone.easyenglish.local');
+      const fallbackProfile = {
+        name: user.displayName || 'Student',
+        email: isPhoneAccount ? '' : (user.email || ''),
+        phone: '',
+        identifier: user.email || '',
+        identifierType: isPhoneAccount ? 'phone' : 'email',
+        authEmail: user.email || '',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        backfilled: true
+      };
+      try {
+        await db.collection('users').doc(user.uid).set(fallbackProfile);
+        displayName = fallbackProfile.name;
+      } catch (e2) { /* still couldn't write; fall back to Auth displayName silently */ }
     }
   } catch (e) { /* fall back to Auth displayName silently */ }
 
